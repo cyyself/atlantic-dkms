@@ -149,3 +149,10 @@ from the kernel tree at `/home/cyy/linux`, branch `atlantic_pagepool`,
 commit "net: atlantic: convert RX path to page_pool".  The same change
 is intended for upstream submission to netdev; this package only exists
 so the running distribution kernel can use it before it lands.
+
+## License
+
+GPL-2.0-only.  The driver source in `src/` is copied from the Linux
+kernel and every file carries an `SPDX-License-Identifier: GPL-2.0-only`
+tag; the packaging files (dkms.conf, this README) are under the same
+license.  The full license text is in [COPYING](COPYING).
