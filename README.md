@@ -123,11 +123,23 @@ To set it up elsewhere with DKMS:
 sudo cp -r /home/cyy/atlantic-dkms /usr/src/atlantic-7.2-rc2-pagepool
 sudo dkms add atlantic/7.2-rc2-pagepool
 sudo dkms install atlantic/7.2-rc2-pagepool
+echo atlantic | sudo tee -a /etc/initramfs-tools/modules
+sudo update-initramfs -u
 ```
 
 DKMS rebuilds the module automatically for every newly installed kernel
 (`AUTOINSTALL=yes`).  The module installs into `/updates/dkms`, which
 overrides the in-kernel atlantic.ko.
+
+The initramfs steps matter on Debian: with `MODULES=most` the initramfs
+includes network drivers, and it is generated *before* the DKMS install,
+so the first reboot would otherwise load the stock module from the
+initramfs during early boot (DKMS only refreshes the initramfs when a
+new kernel is installed, not when a module is added to the running
+one).  Listing `atlantic` in `/etc/initramfs-tools/modules` also
+guarantees the module is picked up via depmod (which resolves to
+`updates/dkms`) rather than the directory scan, which no longer finds
+it after dkms archives the stock `.ko.xz`.
 
 Without DKMS:
 
