@@ -302,6 +302,38 @@ out:
 	return !!budget;
 }
 
+void aq_ring_tx_deinit(struct aq_ring_s *self)
+{
+	struct device *dev = aq_nic_get_dev(self->aq_nic);
+
+	for (; self->sw_head != self->sw_tail;
+		self->sw_head = aq_ring_next_dx(self, self->sw_head)) {
+		struct aq_ring_buff_s *buff = &self->buff_ring[self->sw_head];
+
+		if (likely(buff->is_mapped)) {
+			if (unlikely(buff->is_sop))
+				dma_unmap_single(dev, buff->pa, buff->len,
+						 DMA_TO_DEVICE);
+			else
+				dma_unmap_page(dev, buff->pa, buff->len,
+					       DMA_TO_DEVICE);
+		}
+
+		if (!buff->is_eop)
+			continue;
+
+		if (buff->skb) {
+			dev_kfree_skb_any(buff->skb);
+		} else if (buff->xdpf) {
+			/* Process context: no direct recycling */
+			xdp_return_frame(buff->xdpf);
+		}
+
+		buff->skb = NULL;
+		buff->xdpf = NULL;
+	}
+}
+
 static void aq_rx_checksum(struct aq_ring_s *self,
 			   struct aq_ring_buff_s *buff,
 			   struct sk_buff *skb)
@@ -877,7 +909,11 @@ void aq_ring_rx_deinit(struct aq_ring_s *self)
 {
 	unsigned int i;
 
-	if (!self)
+	/* The ring may already be gone: on a partial aq_ptp_ring_alloc()
+	 * failure the unwind frees it but leaves aq_nic set, so the
+	 * deinit paths still get here.
+	 */
+	if (!self || !self->buff_ring)
 		return;
 
 	/* Consumed but not yet refilled buffers can keep their page
