@@ -15,7 +15,7 @@ once the stack consumed the packet.  With an IOMMU, every map/unmap is an
 IOTLB/pagetable operation, and at 10G packet rates this dominates the RX
 path (~2.2 Gbit/s ceiling with MTU 1500 TCP).
 
-An earlier workaround made the RX page order tunable via a module
+An [earlier workaround](https://lore.kernel.org/lkml/tencent_E71C2F71D9631843941A5DF87204D1B5B509@qq.com/) made the RX page order tunable via a module
 parameter (`rxpageorder=3`), amortizing one map/unmap over 8 pages worth
 of frames.  Converting to page_pool is the proper upstream fix: pages are
 DMA-mapped once when they enter the pool and stay mapped while they are
