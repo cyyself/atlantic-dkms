@@ -411,6 +411,10 @@ static struct sk_buff *aq_xdp_run_prog(struct aq_nic_s *aq_nic,
 	prog = READ_ONCE(rx_ring->xdp_prog);
 	if (!prog) {
 		skb = aq_xdp_build_skb(xdp, aq_nic->ndev);
+		/* The ring has already handed its page pool reference to the
+		 * xdp_buff, so if the skb could not be built the buffer must
+		 * be returned to the pool here or its fragments would leak.
+		 */
 		if (!skb)
 			xdp_return_buff(xdp);
 		return skb;
@@ -914,8 +918,15 @@ void aq_ring_rx_deinit(struct aq_ring_s *self)
 	if (!self || !self->buff_ring)
 		return;
 
-	/* Consumed but not yet refilled buffers can keep their page
-	 * outside of [sw_head, sw_tail), so walk the whole ring.
+	/* Release every fragment still owned by the ring, or
+	 * page_pool_destroy() will stall on the outstanding references.
+	 *
+	 * Walking [sw_head, sw_tail) is not enough: refill is batched
+	 * (aq_ring_rx_fill() waits for AQ_CFG_RX_REFILL_THRES free slots),
+	 * so slots that were cleaned but not yet reposted accumulate in the
+	 * [sw_tail, sw_head) gap. Frames kept for in-place repost (RX
+	 * errors, XDP_DROP and header-only packets) still hold a fragment
+	 * there, so walk the whole ring and release whatever is left.
 	 */
 	for (i = 0; i < self->size; i++) {
 		struct aq_ring_buff_s *buff = &self->buff_ring[i];
