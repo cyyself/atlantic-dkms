@@ -146,6 +146,12 @@ int aq_vec_ring_alloc(struct aq_vec_s *self, struct aq_nic_s *aq_nic,
 		aq_nic_set_tx_ring(aq_nic, idx_ring, ring);
 
 		ring = &self->ring[i][AQ_VEC_RX_ID];
+		/* Registering the MEM_TYPE_PAGE_POOL memory model below needs
+		 * the page pool created by aq_ring_rx_alloc(), so the ring is
+		 * allocated first. If a registration fails, the ring has to be
+		 * freed explicitly: rx_rings is not incremented yet, so the
+		 * unwind through aq_vec_ring_free() would not cover it.
+		 */
 		err = aq_ring_rx_alloc(ring, aq_nic, idx_ring, aq_nic_cfg);
 		if (err)
 			goto err_exit;
