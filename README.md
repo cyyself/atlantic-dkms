@@ -157,10 +157,13 @@ atlantic`.
 ## Source
 
 `src/` is a verbatim copy of `drivers/net/ethernet/aquantia/atlantic/`
-from the kernel tree at `/home/cyy/linux`, branch `atlantic_pagepool`,
-commit "net: atlantic: convert RX path to page_pool".  The same change
-is intended for upstream submission to netdev; this package only exists
-so the running distribution kernel can use it before it lands.
+from the kernel tree at `/home/cyy/linux`, branch `atlantic_pagepool_v2`
+(v2 of the series, rebased on net-next), tip commit "net: atlantic:
+convert RX path to page_pool" on top of the two teardown fixes.  The
+series was submitted to netdev (v1:
+https://lore.kernel.org/lkml/tencent_7DB01BE7F8FA056BB5F11D3570CF636C4309@qq.com/);
+this package only exists so the running distribution kernel can use it
+before it lands.
 
 ## License
 
