@@ -1201,10 +1201,8 @@ int aq_ptp_ring_alloc(struct aq_nic_s *aq_nic)
 	err = xdp_rxq_info_reg_mem_model(&aq_ptp->ptp_rx.xdp_rxq,
 					 MEM_TYPE_PAGE_POOL,
 					 aq_ptp->ptp_rx.pg_pool);
-	if (err < 0) {
-		xdp_rxq_info_unreg(&aq_ptp->ptp_rx.xdp_rxq);
-		goto err_exit_ptp_rx;
-	}
+	if (err < 0)
+		goto err_exit_xdp_rxq;
 
 	if (aq_ptp->a1_ptp) {
 		err = aq_ring_hwts_rx_alloc(&aq_ptp->hwts_rx, aq_nic, PTP_HWST_RING_IDX,
